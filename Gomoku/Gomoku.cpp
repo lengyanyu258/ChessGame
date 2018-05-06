@@ -72,7 +72,7 @@ int Gomoku::UCT(time_t times) {
                     p->arms_[max_key].child = nullptr;
                     p->arms_[max_key].right_choice = false;
                 } else {
-                    if (p->arms_[max_key].played && rand() % 3 == 0) {
+                    if (p->arms_[max_key].played && random() % 3 == 0) {
                         p->generate_child(max_key);
 //                        p = p->arms_[max_key].child;
 //                        for (int j = 0; j < p->locals_area_; ++j) {
@@ -121,16 +121,16 @@ int Gomoku::UCT(time_t times) {
 
     root.total_count_ = 0;
     for (int i = 0; i < total_locals; ++i) {
-        if (root.chessboard_[i / 15][i % 15] != 0) {
-            if (root.arms_[i].child) {
-                root.arms_[i].count = 1;
-                delete root.arms_[i].child;
-                root.arms_[i].child = nullptr;
-            } else {
-                root.arms_[i].count = 2;
-            }
+        if (root.arms_[i].child) {
+            root.arms_[i].count = 1;
+            delete root.arms_[i].child;
+            root.arms_[i].child = nullptr;
         } else {
-            root.arms_[i].count = 0;
+            if (root.chessboard_[i / 15][i % 15] != 0) {
+                root.arms_[i].count = 2;
+            } else {
+                root.arms_[i].count = 0;
+            }
         }
         root.arms_[i].played = false;
         root.arms_[i].value = 0;
@@ -172,8 +172,8 @@ Gomoku::Gomoku() {
 
 void Gomoku::show_chessboard(Chessboard *p, int local) {
     int i, j;
-    printf("\n　ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯ\n 1");
-//    printf("\n  ABCDEFGHIJKLMNO\n 1");
+//    printf("\n　ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯ\n 1");
+    printf("\n  ABCDEFGHIJKLMNO\n 1");
     print_chessman(p->chessboard_[0][0] + 2 * (local == 0), "╔");
     for (i = 1; i < 14; ++i) {
         print_chessman(p->chessboard_[0][i] + 2 * (local == i), "╤");
@@ -217,8 +217,8 @@ bool Gomoku::set_move(int x, int y, bool black) {
 inline void Gomoku::print_chessman(int c, const char *b) {
     switch (c) {
         case 0:
-//            printf("%s", b);
-            printf("　");
+            printf("%s", b);
+//            printf("　");
             break;
         case 1:
             printf("○");

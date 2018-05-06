@@ -7,7 +7,7 @@
 
 bool Chessboard::Monte_Carlo(int local) {
     int locals[total_locals], range;
-    int chessboard[15][15];
+    unsigned int chessboard[15][15];
 
     range = locals_range_;
     memcpy(chessboard, chessboard_, sizeof(chessboard_));   // 拷贝当前的棋盘
@@ -29,7 +29,7 @@ bool Chessboard::Monte_Carlo(int local) {
     if (range == 0) {
         return false;
     }
-    local = locals[rand() % range];
+    local = locals[random() % range];
     move(local, true, chessboard, locals, range);
     // 判断胜负
     if (check(local, chessboard)) {
@@ -41,7 +41,7 @@ bool Chessboard::Monte_Carlo(int local) {
     if (range == 0) {
         return false;
     }
-    local = locals[rand() % range];
+    local = locals[random() % range];
     move(local, false, chessboard, locals, range);
     // 判断胜负
     if (check(local, chessboard)) {
@@ -51,9 +51,9 @@ bool Chessboard::Monte_Carlo(int local) {
     goto b;
 }
 
-inline void Chessboard::move(int local, bool black, int (*cb)[15], int *locals, int &range) {
+inline void Chessboard::move(int local, bool black, unsigned int (*cb)[15], int *locals, int &range) {
     // 先落子
-    cb[local / 15][local % 15] = black + 1;
+    cb[local / 15][local % 15] = static_cast<unsigned int>(black + 1);
 
     // 更新余空对应的值
     for (int i = 0; i < range; ++i) {
@@ -108,7 +108,7 @@ Chessboard::~Chessboard() {
     }
 }
 
-bool Chessboard::check(int local, int (*cb)[15]) {
+bool Chessboard::check(int local, unsigned int (*cb)[15]) {
     bool win = false;
     int x = local % 15;
     int y = local / 15;

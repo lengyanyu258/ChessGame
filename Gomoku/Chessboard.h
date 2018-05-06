@@ -26,7 +26,7 @@ class Chessboard {
 public:
     bool absolutely_win_ = false;
     bool black_ = false; // 先手方
-    int chessboard_[15][15] = {{0}};
+    unsigned int chessboard_[15][15] = {{0}};
     int locals_[total_locals];  // 模拟时可落子点
     int locals_range_ = 0;
     int locals_area_;
@@ -41,8 +41,8 @@ public:
     bool Monte_Carlo(int local);
     void update_value(bool win, int id);
     void generate_child(int id);
-    bool check(int local, int cb[15][15]);
-    void move(int local, bool black, int (*cb)[15], int *locals, int &range);
+    bool check(int local, unsigned int cb[15][15]);
+    void move(int local, bool black, unsigned int (*cb)[15], int *locals, int &range);
 };
 
 
