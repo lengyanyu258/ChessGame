@@ -19,6 +19,7 @@ int Gomoku::UCT(time_t times) {
     stop = start = time(nullptr);
     // 1.由当前局面建立根节点，生成根节点的全部子节点，分别进行模拟对局；
     for (int i = 0; i < root.locals_area_; ++i) {
+		// FIXME: 由于这里发生了内存泄漏，故 locals_area_ 可能表示的不正确！
         max_key = root.locals_[i];
         root.update_value(root.Monte_Carlo(max_key), max_key);
         root.generate_child(max_key);
@@ -72,7 +73,7 @@ int Gomoku::UCT(time_t times) {
                     p->arms_[max_key].child = nullptr;
                     p->arms_[max_key].right_choice = false;
                 } else {
-                    if (p->arms_[max_key].played && random() % 3 == 0) {
+                    if (p->arms_[max_key].played && rand() % 3 == 0) {
                         p->generate_child(max_key);
 //                        p = p->arms_[max_key].child;
 //                        for (int j = 0; j < p->locals_area_; ++j) {
@@ -120,21 +121,29 @@ int Gomoku::UCT(time_t times) {
 //    show_chessboard(root.arms_[max_key].child, max_key);
 
     root.total_count_ = 0;
-    for (int i = 0; i < total_locals; ++i) {
-        if (root.arms_[i].child) {
-            root.arms_[i].count = 1;
-            delete root.arms_[i].child;
-            root.arms_[i].child = nullptr;
-        } else {
-            if (root.chessboard_[i / 15][i % 15] != 0) {
-                root.arms_[i].count = 2;
-            } else {
-                root.arms_[i].count = 0;
-            }
-        }
-        root.arms_[i].played = false;
-        root.arms_[i].value = 0;
-    }
+	for (int i = 0; i < total_locals; ++i) {
+		if (root.arms_[i].child) {
+			// FIXME: 此处为权宜之计，count 表示须弄清楚！
+			if (root.chessboard_[i / 15][i % 15] != 0) {
+				root.arms_[i].count = 1;
+			}
+			else {
+				root.arms_[i].count = 0;
+			}
+			delete root.arms_[i].child;
+			root.arms_[i].child = nullptr;
+		}
+		else {
+			if (root.chessboard_[i / 15][i % 15] != 0) {
+				root.arms_[i].count = 2;
+			}
+			else {
+				root.arms_[i].count = 0;
+			}
+		}
+		root.arms_[i].played = false;
+		root.arms_[i].value = 0;
+	}
 
     return max_key;
 }
@@ -174,27 +183,27 @@ void Gomoku::show_chessboard(Chessboard *p, int local) {
     int i, j;
 //    printf("\n　ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯ\n 1");
     printf("\n  ABCDEFGHIJKLMNO\n 1");
-    print_chessman(p->chessboard_[0][0] + 2 * (local == 0), "╔");
+    print_chessman(p->chessboard_[0][0] + 2 * (local == 0), "+");
     for (i = 1; i < 14; ++i) {
-        print_chessman(p->chessboard_[0][i] + 2 * (local == i), "╤");
+        print_chessman(p->chessboard_[0][i] + 2 * (local == i), "-");
     }
-    print_chessman(p->chessboard_[0][14] + 2 * (local == 14), "╗");
+    print_chessman(p->chessboard_[0][14] + 2 * (local == 14), "+");
     printf("\n");
     for (j = 1; j < 14; ++j) {
         printf("%2d", j + 1);
-        print_chessman(p->chessboard_[j][0] + 2 * (local == 15 * j), "╟");
+        print_chessman(p->chessboard_[j][0] + 2 * (local == 15 * j), "|");
         for (i = 1; i < 14; ++i) {
-            print_chessman(p->chessboard_[j][i] + 2 * (local == 15 * j + i), "┼");
+            print_chessman(p->chessboard_[j][i] + 2 * (local == 15 * j + i), ".");
         }
-        print_chessman(p->chessboard_[j][14] + 2 * (local == 15 * j + 14), "╢");
+        print_chessman(p->chessboard_[j][14] + 2 * (local == 15 * j + 14), "|");
         printf("\n");
     }
     printf("15");
-    print_chessman(p->chessboard_[14][0] + 2 * (local == 15 * 14), "╚");
+    print_chessman(p->chessboard_[14][0] + 2 * (local == 15 * 14), "+");
     for (i = 1; i < 14; ++i) {
-        print_chessman(p->chessboard_[14][i] + 2 * (local == 15 * 14 + i), "╧");
+        print_chessman(p->chessboard_[14][i] + 2 * (local == 15 * 14 + i), "-");
     }
-    print_chessman(p->chessboard_[14][14] + 2 * (local == 15 * 14 + 14), "╝");
+    print_chessman(p->chessboard_[14][14] + 2 * (local == 15 * 14 + 14), "+");
     printf("\n");
 }
 
@@ -221,16 +230,16 @@ inline void Gomoku::print_chessman(int c, const char *b) {
 //            printf("　");
             break;
         case 1:
-            printf("○");
+            printf("o");
             break;
         case 2:
-            printf("●");
+            printf("x");
             break;
         case 3:
-            printf("□");
+            printf("O");
             break;
         case 4:
-            printf("■");
+            printf("X");
             break;
         default:break;
     }

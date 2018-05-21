@@ -1,6 +1,8 @@
 # IDE
 .idea/
 cmake-build-debug/
+.vs/
+CMakeSettings.json
 
 # Prerequisites
 *.d

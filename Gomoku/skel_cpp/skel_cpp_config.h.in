@@ -1,0 +1,7 @@
+/* Define if this is Unixish platform */
+#cmakedefine ON_UNIX
+
+/* Define if this is Win32ish platform */
+#cmakedefine ON_WIN32
+
+#cmakedefine HAVE_RANDOM

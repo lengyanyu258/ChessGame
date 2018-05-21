@@ -29,7 +29,7 @@ bool Chessboard::Monte_Carlo(int local) {
     if (range == 0) {
         return false;
     }
-    local = locals[random() % range];
+    local = locals[rand() % range];
     move(local, true, chessboard, locals, range);
     // 判断胜负
     if (check(local, chessboard)) {
@@ -41,7 +41,7 @@ bool Chessboard::Monte_Carlo(int local) {
     if (range == 0) {
         return false;
     }
-    local = locals[random() % range];
+    local = locals[rand() % range];
     move(local, false, chessboard, locals, range);
     // 判断胜负
     if (check(local, chessboard)) {
