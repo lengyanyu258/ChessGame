@@ -12,6 +12,7 @@ if(WIN32)
 elseif(UNIX)
 	set(ON_WIN32 0)
 	set(ON_UNIX 1)
+	link_libraries(pthread)
 endif()
 
 configure_file(
@@ -23,9 +24,7 @@ configure_file(
 # so that we will find skel_cpp_config.h
 include_directories(${PROJECT_BINARY_DIR})
 
-if(ON_WIN32)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(EXE_ARCH 64)
-	endif()
-	add_executable(${PROJECT_NAME}${EXE_ARCH} pisqpipe.cpp example.cpp)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(EXE_ARCH 64)
 endif()
+add_executable(${PROJECT_NAME}${EXE_ARCH} pisqpipe.cpp example.cpp)

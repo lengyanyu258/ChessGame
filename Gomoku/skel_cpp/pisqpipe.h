@@ -1,5 +1,7 @@
 /** header with functions and variables for pipe AI */
 
+#include "skel_cpp_config.h"
+
 /* information about a game - you should use these variables */
 extern int width,height; /* the board size */
 extern int info_timeout_turn;  /* time for one turn in milliseconds */
@@ -36,6 +38,6 @@ void brain_eval(int x,int y); /* display evaluation of square [x,y] */
 #endif
 
 /* these functions are in pisqpipe.cpp */
-extern int pipeOut(char *fmt,...);
+extern int pipeOut(const char *fmt,...);
 extern void do_mymove(int x,int y);
 extern void suggest(int x,int y);

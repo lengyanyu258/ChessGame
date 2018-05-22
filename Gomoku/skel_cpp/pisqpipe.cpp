@@ -1,18 +1,28 @@
 /** functions that communicate with manager through pipes */
 /** don't modify this file */
 
+#include "pisqpipe.h"
+
+#ifdef ON_WIN32
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include "pisqpipe.h"
-
-#include "skel_cpp_config.h"
-#ifdef ON_WIN32
 #include <windows.h>
+
+static HANDLE event1, event2;
 #else
-typedef unsigned long       DWORD;
+#include <cstring>
+#include <cstdarg>
+#include <thread>
+#include <mutex>
+
+#define _stricmp strcasecmp
+#define _strnicmp strncasecmp
+
+std::thread thread;
+std::mutex mu;
 #endif
 
 int width, height; /* the board size */
@@ -29,11 +39,10 @@ unsigned start_time; /* tick count at the beginning of turn */
 char dataFolder[256]; /* folder for persistent files */
 
 static char cmd[256];
-static HANDLE event1, event2;
 
 
 /** write a line to STDOUT */
-int pipeOut(char *fmt, ...)
+int pipeOut(const char *fmt, ...)
 {
 	int i;
 	va_list va;
@@ -81,10 +90,10 @@ static void parse_3int_chk(const char *param, int *x, int *y, int *z)
 /** return pointer to word after command if input starts with command, otherwise return NULL */
 static const char *get_cmd_param(const char *command, const char *input)
 {
-	int n1, n2;
-	n1=(int)strlen(command);
-	n2=(int)strlen(input);
-	if(n1>n2 || _strnicmp(command, input, n1)) return NULL; /* it is not command */
+	size_t n1, n2;
+	n1=strlen(command);
+	n2=strlen(input);
+	if(n1>n2 || _strnicmp(command, input, n1) != 0) return NULL; /* it is not command */
 	input+=strlen(command);
 	while(isspace(input[0])) input++;
 	return input;
@@ -103,6 +112,28 @@ void do_mymove(int x, int y)
 	pipeOut("%d,%d", x, y);
 }
 
+#ifdef ON_UNIX
+static void threadLoop()
+{
+    brain_turn();
+    mu.unlock();
+}
+
+static void turn()
+{
+    terminateAI=0;
+    mu.lock();
+    thread = std::thread(threadLoop);
+    thread.detach();
+}
+
+static void stop()
+{
+    terminateAI=1;
+    while (!mu.try_lock());
+    mu.unlock();
+}
+#else
 /** main function for the working thread */
 static DWORD WINAPI threadLoop(LPVOID)
 {
@@ -127,10 +158,15 @@ static void stop()
 	terminateAI=1;
 	WaitForSingleObject(event2, INFINITE);
 }
+#endif
 
 static void start()
 {
+#ifdef ON_UNIX
+	start_time= static_cast<unsigned int>(clock());
+#else
 	start_time=GetTickCount();
+#endif
 	stop();
 	if(!width){
 		width=height=20;
@@ -228,7 +264,7 @@ static void do_command()
 			else if(who==2) brain_opponents(x, y);
 			else if(who==3) brain_block(x, y);
 			else{
-				if(_stricmp(cmd, "done")) pipeOut("ERROR x,y,who or DONE expected after BOARD");
+				if(_stricmp(cmd, "done") != 0) pipeOut("ERROR x,y,who or DONE expected after BOARD");
 				break;
 			}
 		}
@@ -236,11 +272,11 @@ static void do_command()
 	}
 	else if((param=get_cmd_param("takeback", cmd))!=0) {
 		start();
-		t="ERROR bad coordinates";
+		t= const_cast<char *>("ERROR bad coordinates");
 		if(parse_coord(param, &x, &y)){
 			e= brain_takeback(x, y);
-			if(e==0) t="OK";
-			else if(e==1) t="UNKNOWN";
+			if(e==0) t= const_cast<char *>("OK");
+			else if(e==1) t= const_cast<char *>("UNKNOWN");
 		}
 		pipeOut(t);
 	}
@@ -257,7 +293,6 @@ int main()
 	DWORD mode;
 	if(GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode))
 		puts("MESSAGE Gomoku AI should not be started directly. Please install gomoku manager (http://sourceforge.net/projects/piskvork). Then enter path to this exe file in players settings.");
-#endif
 
 #ifdef DEBUG
 	SetErrorMode(0);
@@ -266,6 +301,7 @@ int main()
 	event1=CreateEvent(0, FALSE, FALSE, 0);
 	CreateThread(0, 0, threadLoop, 0, 0, &tid);
 	event2=CreateEvent(0, TRUE, TRUE, 0);
+#endif
 	for(;;){
 		get_line();
 		do_command();
