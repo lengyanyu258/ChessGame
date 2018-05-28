@@ -2,66 +2,136 @@
 // Created by lengy on 2017/12/14.
 //
 
-#include <cstring>
+#include <cstdlib>  // rand()
+#include <cstring>  // memcpy()
 #include "Chessboard.h"
 
-bool Chessboard::Monte_Carlo(int local) {
-    int locals[total_locals], range;
-    unsigned int chessboard[15][15];
+#include <iostream>
+#include "algorithm/ai.h"
+using namespace std;
 
-    range = locals_range_;
-    memcpy(chessboard, chessboard_, sizeof(chessboard_));   // 拷贝当前的棋盘
-    memcpy(locals, locals_, sizeof(locals_));    // 拷贝当前的可落子点
+uint8_t board[MAX_BOARD][MAX_BOARD] = {};
+int border_length = MAX_BOARD;
 
-    move(local, black_, chessboard, locals, range);
-    // 判断胜负
-    if (check(local, chessboard)) {
-        absolutely_win_ = true;
-        return true;
+Chessboard::Chessboard() = default;
+
+Chessboard::~Chessboard() {
+    for (int i = 0; i < locals_area_; ++i) {
+        delete locals_[i]->child;
+        delete locals_[i];
+    }
+    delete[] locals_;
+}
+
+bool Chessboard::init_uct() {
+    memcpy(chessboard_, board, sizeof(board));  // 拷贝当前的棋盘
+    locals_ = new UCBNode*[border_length * border_length];
+    for (uint16_t y = 0; y < border_length; ++y) {
+        for (uint16_t x = 0; x < border_length; ++x) {
+            if (chessboard_[x][y] == 0) {
+                locals_[locals_area_] = new UCBNode;
+                locals_[locals_area_++]->key = x << 8 | y;
+            }
+        }
+    }
+    
+    if (locals_area_ == 0) {
+        return false;
     }
 
-    if (black_) {
-        goto w;
+    return true;
+    /*
+    // init locals_
+    locals_[locals_range_++] = 7 * 15 + 7;
+    locals_[locals_range_++] = 7 * 15 + 6;
+    locals_[locals_range_++] = 6 * 15 + 6;
+    for (int i = 6, j = 6, k = 2;; k += 2) {
+        // right
+        for (int right = 0; right < k; ++right) {
+            locals_[locals_range_++] = j * 15 + ++i;
+        }
+        // down
+        for (int down = 0; down < k; ++down) {
+            locals_[locals_range_++] = ++j * 15 + i;
+        }
+        // left
+        for (int left = 0; left < k; ++left) {
+            locals_[locals_range_++] = j * 15 + --i;
+        }
+        if (--i >= 0) {
+            locals_[locals_range_++] = j * 15 + i;
+            // up
+            for (int up = -1; up < k; ++up) {
+                locals_[locals_range_++] = --j * 15 + i;
+            }
+        } else {
+            break;
+        }
+    }
+    */
+}
+
+bool Chessboard::Monte_Carlo(uint16_t local) {
+    TinyChessboard cb(locals_area_);
+
+    memcpy(cb.chessboard, chessboard_, sizeof(chessboard_));  // 拷贝当前的棋盘
+    memcpy(cb.locals, locals_, locals_area_ * sizeof(UCBNode *));  // 拷贝当前的可落子点
+
+    move(local, cb.chessboard, cb.locals, cb.locals_area, opponents_);
+    // 判断胜负
+    if (check(local, cb.chessboard)) {
+        return absolutely_win_ = true;
+    }
+
+    if (opponents_) {
+        goto my_turn;
     }
 
     // 黑棋
-    b:
-    if (range == 0) {
+opponents_turn:
+    if (cb.locals_area == 0) {
         return false;
     }
-    local = locals[rand() % range];
-    move(local, true, chessboard, locals, range);
+    local = cb.locals[rand() % cb.locals_area]->key;
+    move(local, cb.chessboard, cb.locals, cb.locals_area, true);
     // 判断胜负
-    if (check(local, chessboard)) {
-        return black_;
+    if (check(local, cb.chessboard)) {
+        return opponents_;
     }
 
     // 白棋
-    w:
-    if (range == 0) {
+my_turn:
+    if (cb.locals_area == 0) {
         return false;
     }
-    local = locals[rand() % range];
-    move(local, false, chessboard, locals, range);
+    local = cb.locals[rand() % cb.locals_area]->key;
+    move(local, cb.chessboard, cb.locals, cb.locals_area, false);
     // 判断胜负
-    if (check(local, chessboard)) {
-        return !black_;
+    if (check(local, cb.chessboard)) {
+        return !opponents_;
     }
 
-    goto b;
+    goto opponents_turn;
 }
 
-inline void Chessboard::move(int local, bool black, unsigned int (*cb)[15], int *locals, int &range) {
+inline void Chessboard::move(uint16_t local, uint8_t (*cb)[MAX_BOARD], 
+                             UCBNode **locals, uint16_t &area, bool black) {
     // 先落子
-    cb[local / 15][local % 15] = static_cast<unsigned int>(black + 1);
+    cb[local >> 8][local & 0xff] = black + 1;
 
     // 更新余空对应的值
-    for (int i = 0; i < range; ++i) {
-        if (locals[i] == local) {
-            --range;
-            for (int j = i; j < range; ++j) {
+    for (int i = 0; i < area; ++i) {
+        if (locals[i]->key == local) {
+            /*UCBNode *t = locals[--area];
+            locals[area] = locals[i];
+            locals[i] = t;*/
+            locals[i] = locals[--area];
+            /*
+            --area;
+            for (int j = i; j < area; ++j) {
                 locals[j] = locals[j + 1];
             }
+            */
             break;
         }
     }
@@ -69,11 +139,12 @@ inline void Chessboard::move(int local, bool black, unsigned int (*cb)[15], int 
 
 void Chessboard::update_value(bool win, int id) {
     Chessboard *p = this;
-    arms_[id].played = true;
+
+    p->locals_[id]->played = true;
     do {
-        ++p->arms_[id].count;
+        ++p->locals_[id]->count;
         ++p->total_count_;
-        p->arms_[id].value = (p->arms_[id].value * (p->arms_[id].count - 1) + win) / p->arms_[id].count;
+        p->locals_[id]->value = (p->locals_[id]->value * (p->locals_[id]->count - 1) + win) / p->locals_[id]->count;
         win = !win;
         id = p->father_id_;
         p = p->father_;
@@ -81,84 +152,84 @@ void Chessboard::update_value(bool win, int id) {
 }
 
 void Chessboard::generate_child(int id) {
-    Chessboard *child = arms_[id].child = new Chessboard;
+    Chessboard *child = locals_[id]->child = new Chessboard;
     child->father_id_ = id;
     child->father_ = this;
-    child->black_ = !black_;
-    child->locals_range_ = locals_range_;
-    // 复制棋盘与可落子点
+    child->opponents_ = !opponents_;
+
+    // 复制棋盘与可落子点并更新余空
+    child->locals_ = new UCBNode*[locals_area_ - 1];
     memcpy(child->chessboard_, chessboard_, sizeof(chessboard_));
-    memcpy(child->locals_, locals_, sizeof(locals_));
-    // 复制并更新余空
-    child->move(id, black_, child->chessboard_, child->locals_, child->locals_range_);
-    for (int i = 0; i < total_locals; ++i) {
-        child->arms_[i].count = arms_[i].count;
+    for (int i = 0; i < locals_area_; ++i) {
+        if (i != id) {
+            child->locals_[child->locals_area_] = new UCBNode;
+            child->locals_[child->locals_area_]->key = locals_[i]->key;
+            //child->locals_[child->locals_area_]->count = locals_[i]->count;
+            ++child->locals_area_;
+        } else {
+            child->chessboard_[locals_[i]->key >> 8][locals_[i]->key & 0xff] = opponents_ + 1;
+        }
     }
-    child->locals_area_ = (total_locals - child->locals_range_ + 1) * 8;
-    if (child->locals_area_ > child->locals_range_) {
-        child->locals_area_ = child->locals_range_;
-    }
-    // 更新简单搜索策略
-    child->update_locals(id);
+
+    //child->locals_area_ = (total_locals - child->locals_range_ + 1) * 8;
+    //if (child->locals_area_ > child->locals_range_) {
+    //    child->locals_area_ = child->locals_range_;
+    //}
+    //// 更新简单搜索策略
+    //child->update_locals(id);
 }
 
-Chessboard::~Chessboard() {
-    for (auto &arm : arms_) {
-        delete arm.child;
-    }
-}
-
-bool Chessboard::check(int local, unsigned int (*cb)[15]) {
-    bool win = false;
-    int x = local % 15;
-    int y = local / 15;
+bool Chessboard::check(uint16_t local, uint8_t (*cb)[MAX_BOARD]) {
+    int win = false;
+    int x = local >> 8;
+    int y = local & 0xff;
     int i, j, k, lx, ly, rx, ry;
 
     //横向→
     i = x < 5 ? 0 : x - 4;
-    for (k = i; k <= x && k <= 10; ++k) {
-        win |= cb[y][k] & cb[y][k + 1] & cb[y][k + 2] & cb[y][k + 3] & cb[y][k + 4];
+    for (k = i; k <= x && k < border_length - 4; ++k) {
+        win |= cb[k][y] & cb[k + 1][y] & cb[k + 2][y] & cb[k + 3][y] & cb[k + 4][y]; 
     }
     //纵向↓
     j = y < 5 ? 0 : y - 4;
-    for (k = j; k <= y && k <= 10; ++k) {
-        win |= cb[k][x] & cb[k + 1][x] & cb[k + 2][x] & cb[k + 3][x] & cb[k + 4][x];
+    for (k = j; k <= y && k < border_length - 4; ++k) {
+        win |= cb[x][k] & cb[x][k + 1] & cb[x][k + 2] & cb[x][k + 3] & cb[x][k + 4];
     }
     //左上到右下↘
     k = x - i < y - j ? x - i : y - j;
     lx = x - k;
     ly = y - k;
-    for (k = 0; k < 5 && ly + k <= 10 && lx + k <= 10; ++k) {
-        win |= cb[ly + k][lx + k] & cb[ly + k + 1][lx + k + 1] & cb[ly + k + 2][lx + k + 2] & cb[ly + k + 3][lx + k + 3] & cb[ly + k + 4][lx + k + 4];
+    for (k = 0; k < 5 && lx + k < border_length - 4 && ly + k < border_length - 4; ++k) {
+        win |= cb[lx + k + 1][ly + k + 1] & cb[lx + k + 2][ly + k + 2] &
+               cb[lx + k + 3][ly + k + 3] & cb[lx + k + 4][ly + k + 4] & cb[lx + k][ly + k];
     }
     //右上到左下↙
-    i = 14 - x < 5 ? 14 : x + 4;
+    i = border_length - x <= 5 ? border_length - 1 : x + 4;
     k = i - x < y - j ? i - x : y - j;
     rx = x + k;
     ry = y - k;
-    for (k = 0; k < 5 && ry + k <= 10 && rx - k >= 4; ++k) {
-        win |= cb[ry + k][rx - k] & cb[ry + k + 1][rx - k - 1] & cb[ry + k + 2][rx - k - 2] & cb[ry + k + 3][rx - k - 3] & cb[ry + k + 4][rx - k - 4];
+    for (k = 0; k < 5 && rx - k >= 4 && ry + k < border_length - 4; ++k) {
+        win |= cb[rx - k - 1][ry + k + 1] & cb[rx - k - 2][ry + k + 2] & 
+               cb[rx - k - 3][ry + k + 3] & cb[rx - k - 4][ry + k + 4] & cb[rx - k][ry + k];
     }
 
     return win;
 }
-
-Chessboard::Chessboard() = default;
-
+/*
 void Chessboard::update_locals(int id) {
     int locals[total_locals];
     int locals_range = locals_range_;
     int i, j, k = 3, x = id % 15, y = id / 15;
     int around_locals[9][8] = {
-            {id + 1, id + 15, id + 16},
-            {id - 1, id + 14, id + 15},
-            {id - 15, id - 14, id + 1},
-            {id - 16, id - 15, id - 1},
-            {id - 15, id - 14, id + 1, id + 15, id + 16},
-            {id - 16, id - 15, id - 1, id + 14, id + 15},
-            {id - 1, id + 1, id + 14, id + 15, id + 16},
-            {id - 16, id - 15, id - 14, id - 1, id + 1},
-            {id - 16, id - 15, id - 14, id - 1, id + 1, id + 14, id + 15, id + 16}
+        {id + 1,  id + 15, id + 16},
+        {id - 1,  id + 14, id + 15},
+        {id - 15, id - 14, id + 1},
+        {id - 16, id - 15, id - 1},
+        {id - 15, id - 14, id + 1, id + 15, id + 16},
+        {id - 16, id - 15, id - 1, id + 14, id + 15},
+        {id - 1,  id + 1, id + 14, id + 15, id + 16},
+        {id - 16, id - 15, id - 14, id - 1, id + 1},
+        {id - 16, id - 15, id - 14, id - 1, id + 1, id + 14, id + 15, id + 16}
     };
     memcpy(locals, locals_, sizeof(locals_));
     if (id == 0) {
@@ -198,3 +269,4 @@ void Chessboard::update_locals(int id) {
         }
     }
 }
+*/

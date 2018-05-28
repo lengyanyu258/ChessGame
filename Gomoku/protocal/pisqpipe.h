@@ -1,6 +1,6 @@
 /** header with functions and variables for pipe AI */
 
-#include "skel_cpp_config.h"
+#include "config.h"
 
 /* information about a game - you should use these variables */
 extern int width,height; /* the board size */

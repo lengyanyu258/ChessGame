@@ -3,32 +3,35 @@
 
 #include "pisqpipe.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
+#include <cstdarg>
+#include <ctime>
+
 #ifdef ON_WIN32
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
 #include <windows.h>
+
+#define sscanf sscanf_s
+#define strncpy strncpy_s
 
 static HANDLE event1, event2;
 #else
-#include <cstring>
-#include <cstdarg>
 #include <thread>
 #include <mutex>
 
 #define _stricmp strcasecmp
 #define _strnicmp strncasecmp
 
-std::thread thread;
-std::mutex mu;
+static std::thread thread;
+static std::mutex mu;
 #endif
 
 int width, height; /* the board size */
-int info_timeout_turn=30000; /* time for one turn in milliseconds */
-int info_timeout_match=1000000000; /* total time for a game */
-int info_time_left=1000000000; /* left time for a game */
+int info_timeout_turn=5000; /* time for one turn in milliseconds */
+int info_timeout_match= 300000; /* total time for a game */
+int info_time_left= 300000; /* left time for a game */
 int info_max_memory=0; /* maximum memory in bytes, zero if unlimited */
 int info_game_type=1; /* 0:human opponent, 1:AI opponent, 2:tournament, 3:network tournament */
 int info_exact5=0; /* 0:five or more stones win, 1:exactly five stones win */
@@ -93,7 +96,7 @@ static const char *get_cmd_param(const char *command, const char *input)
 	size_t n1, n2;
 	n1=strlen(command);
 	n2=strlen(input);
-	if(n1>n2 || _strnicmp(command, input, n1) != 0) return NULL; /* it is not command */
+	if(n1>n2 || _strnicmp(command, input, n1) != 0) return nullptr; /* it is not command */
 	input+=strlen(command);
 	while(isspace(input[0])) input++;
 	return input;
@@ -162,11 +165,7 @@ static void stop()
 
 static void start()
 {
-#ifdef ON_UNIX
 	start_time= static_cast<unsigned int>(clock());
-#else
-	start_time=GetTickCount();
-#endif
 	stop();
 	if(!width){
 		width=height=20;

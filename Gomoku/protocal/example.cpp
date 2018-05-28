@@ -1,13 +1,9 @@
 #include "pisqpipe.h"
 
-#ifdef ON_UNIX
 #define __int64 long long
 #define UInt32x32To64(a, b) (((unsigned __int64)((unsigned int)(a))) * ((unsigned __int64)((unsigned int)(b))))
-const char *infotext= R"(name="Random", author="Petr Lastovicka", version="3.2", country="Czech Republic", www="http://petr.lastovicka.sweb.cz")";
-#else
-#include <windows.h>
-const char *infotext="name=\"Random\", author=\"Petr Lastovicka\", version=\"3.2\", country=\"Czech Republic\", www=\"http://petr.lastovicka.sweb.cz\"";
-#endif
+
+const char *infotext = R"(name="Random", author="Petr Lastovicka", version="3.2", country="Czech Republic", www="http://petr.lastovicka.sweb.cz")";
 
 #define MAX_BOARD 100
 int board[MAX_BOARD][MAX_BOARD];

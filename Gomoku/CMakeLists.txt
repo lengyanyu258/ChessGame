@@ -1,8 +1,43 @@
-cmake_minimum_required(VERSION 3.9)
 project(Gomoku_Terminator)
 
-set(CMAKE_CXX_STANDARD 11)
+# the executable program file name
+set(PFX_NAME pbrain-)
+set(EXE_NAME Gomoku_Terminator)
 
-add_executable(Gomoku_Terminator main.cpp Gomoku.cpp Gomoku.h Chessboard.cpp Chessboard.h)
+# check the system platform architecture(x86 or x64).
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(EXE_ARCH 64)
+endif()
 
-add_subdirectory(skel_cpp)
+# does this system provide the random function?
+include(CheckFunctionExists)
+
+check_function_exists(random HAVE_RANDOM)
+
+# check the system platform
+if(WIN32)
+	set(ON_WIN32 1)
+	set(ON_UNIX 0)
+elseif(UNIX)
+	set(ON_WIN32 0)
+	set(ON_UNIX 1)
+	# required by the <thread> header file.
+	link_libraries(pthread)
+endif()
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file(
+	${PROJECT_SOURCE_DIR}/config.h.in
+	${PROJECT_BINARY_DIR}/config.h
+)
+
+# add the binary tree to the search path for include files
+# so that we will find config.h
+include_directories(${PROJECT_BINARY_DIR})
+
+# add uct algorithm program
+add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH} protocal/pisqpipe.cpp brain.cpp Chessboard.cpp algorithm/uct.cpp)
+
+# add the example project.
+add_subdirectory(protocal EXCLUDE_FROM_ALL)
