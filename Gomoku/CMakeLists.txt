@@ -36,8 +36,15 @@ configure_file(
 # so that we will find config.h
 include_directories(${PROJECT_BINARY_DIR})
 
+# add optimal algorithm program
+add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
+        protocol/pisqpipe.cpp algorithm/ai.h algorithm/normal.cpp
+        brain.cpp Chessboard.cpp)
+
 # add uct algorithm program
-add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH} protocal/pisqpipe.cpp brain.cpp Chessboard.cpp algorithm/uct.cpp)
+add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
+		protocol/pisqpipe.cpp algorithm/ai.h algorithm/uct.cpp
+        brain.cpp Chessboard.cpp)
 
 # add the example project.
-add_subdirectory(protocal EXCLUDE_FROM_ALL)
+add_subdirectory(protocol EXCLUDE_FROM_ALL)

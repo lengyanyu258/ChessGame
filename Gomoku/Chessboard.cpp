@@ -6,6 +6,10 @@
 #include <cstring>  // memcpy()
 #include "Chessboard.h"
 
+#ifdef HAVE_RANDOM
+#define rand random
+#endif // HAVE_RANDOM
+
 #include <iostream>
 #include "algorithm/ai.h"
 using namespace std;
@@ -16,11 +20,35 @@ int border_length = MAX_BOARD;
 Chessboard::Chessboard() = default;
 
 Chessboard::~Chessboard() {
-    for (int i = 0; i < locals_area_; ++i) {
-        delete locals_[i]->child;
-        delete locals_[i];
+    if (locals_) {
+        for (int i = 0; i < locals_area_; ++i) {
+            delete locals_[i]->child;
+            delete locals_[i];
+        }
+        delete[] locals_;
     }
-    delete[] locals_;
+    if (scores_) {
+        for (int i = 0; i < locals_area_; ++i) {
+            delete scores_[i]->child;
+            delete scores_[i];
+        }
+        delete[] scores_;
+    }
+}
+
+bool Chessboard::init_normal() {
+    memcpy(chessboard_, board, sizeof(board));  // 拷贝当前的棋盘
+    scores_ = new OptNode*[border_length * border_length];
+    for (uint16_t y = 0; y < border_length; ++y) {
+        for (uint16_t x = 0; x < border_length; ++x) {
+            if (chessboard_[x][y] == 0) {
+                scores_[locals_area_] = new OptNode;
+                scores_[locals_area_++]->key = x << 8 | y;
+            }
+        }
+    }
+
+    return locals_area_ != 0;
 }
 
 bool Chessboard::init_uct() {
@@ -34,12 +62,9 @@ bool Chessboard::init_uct() {
             }
         }
     }
-    
-    if (locals_area_ == 0) {
-        return false;
-    }
 
-    return true;
+    return locals_area_ != 0;
+
     /*
     // init locals_
     locals_[locals_range_++] = 7 * 15 + 7;
@@ -80,7 +105,7 @@ bool Chessboard::Monte_Carlo(uint16_t local) {
     move(local, cb.chessboard, cb.locals, cb.locals_area, opponents_);
     // 判断胜负
     if (check(local, cb.chessboard)) {
-        return absolutely_win_ = true;
+        return (absolutely_win_ = true);
     }
 
     if (opponents_) {
@@ -117,7 +142,7 @@ my_turn:
 inline void Chessboard::move(uint16_t local, uint8_t (*cb)[MAX_BOARD], 
                              UCBNode **locals, uint16_t &area, bool black) {
     // 先落子
-    cb[local >> 8][local & 0xff] = black + 1;
+    cb[local >> 8][local & 0xff] = static_cast<uint8_t>(black + 1);
 
     // 更新余空对应的值
     for (int i = 0; i < area; ++i) {
@@ -167,7 +192,7 @@ void Chessboard::generate_child(int id) {
             //child->locals_[child->locals_area_]->count = locals_[i]->count;
             ++child->locals_area_;
         } else {
-            child->chessboard_[locals_[i]->key >> 8][locals_[i]->key & 0xff] = opponents_ + 1;
+            child->chessboard_[locals_[i]->key >> 8][locals_[i]->key & 0xff] = static_cast<uint8_t>(opponents_ + 1);
         }
     }
 
@@ -188,7 +213,7 @@ bool Chessboard::check(uint16_t local, uint8_t (*cb)[MAX_BOARD]) {
     //横向→
     i = x < 5 ? 0 : x - 4;
     for (k = i; k <= x && k < border_length - 4; ++k) {
-        win |= cb[k][y] & cb[k + 1][y] & cb[k + 2][y] & cb[k + 3][y] & cb[k + 4][y]; 
+        win |= cb[k][y] & cb[k + 1][y] & cb[k + 2][y] & cb[k + 3][y] & cb[k + 4][y];
     }
     //纵向↓
     j = y < 5 ? 0 : y - 4;
@@ -209,12 +234,63 @@ bool Chessboard::check(uint16_t local, uint8_t (*cb)[MAX_BOARD]) {
     rx = x + k;
     ry = y - k;
     for (k = 0; k < 5 && rx - k >= 4 && ry + k < border_length - 4; ++k) {
-        win |= cb[rx - k - 1][ry + k + 1] & cb[rx - k - 2][ry + k + 2] & 
+        win |= cb[rx - k - 1][ry + k + 1] & cb[rx - k - 2][ry + k + 2] &
                cb[rx - k - 3][ry + k + 3] & cb[rx - k - 4][ry + k + 4] & cb[rx - k][ry + k];
     }
 
-    return win;
+    return static_cast<bool>(win);
 }
+
+inline void print_chessman(uint8_t c, const char b) {
+    switch (c) {
+        case 0:
+            printf(" %c ", b);
+            break;
+        case 1:
+            printf(" o ");
+            break;
+        case 2:
+            printf(" x ");
+            break;
+        case 3:
+            printf(" O ");
+            break;
+        case 4:
+            printf(" X ");
+            break;
+        default:
+            printf(" ? ");
+            break;
+    }
+}
+
+void Chessboard::show(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
+    uint i, j;
+    printf("\n    ");
+    for (i = 0; i < border_length; ++i) {
+        print_chessman(0, char(i + 'A'));
+    }
+    printf("\n   +");
+    for (i = 0; i < border_length; ++i) {
+        printf("---");
+    }
+    printf("+\n");
+
+    for (j = 0; j < border_length; ++j) {
+        printf("%2d |", j + 1);
+        for (i = 0; i < border_length; ++i) {
+            print_chessman(uint8_t(cb[i][j] + 2 * (local == (i << 8 | j))), '.');
+        }
+        printf("|\n");
+    }
+
+    printf("   +");
+    for (i = 0; i < border_length; ++i) {
+        printf("---");
+    }
+    printf("+\n");
+}
+
 /*
 void Chessboard::update_locals(int id) {
     int locals[total_locals];

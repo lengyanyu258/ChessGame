@@ -1,12 +1,8 @@
-#include "protocal/pisqpipe.h"
+#include "Gomoku/protocol/pisqpipe.h"
 
 #include <iostream>
 #include <ctime>
 #include "algorithm/ai.h"
-
-#ifdef HAVE_RANDOM
-#define rand random
-#endif // HAVE_RANDOM
 
 const char *infotext = R"(name="Gomoku_Terminator", author="Shawn Sun", version="2.1", country="China", www="https://lengyanyu258.github.io")";
 

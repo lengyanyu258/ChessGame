@@ -1,61 +1,13 @@
 #include "ai.h"
 #include <cmath>
-
 #include <iostream>
-using namespace std;
 
-inline void print_chessman(uint8_t c, const char b) {
-    switch (c) {
-        case 0:
-            printf(" %c ", b);
-            break;
-        case 1:
-            printf(" o ");
-            break;
-        case 2:
-            printf(" x ");
-            break;
-        case 3:
-            printf(" O ");
-            break;
-        case 4:
-            printf(" X ");
-            break;
-        default:
-            printf(" ? ");
-            break;
-    }
-}
-
-void show_chessboard(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
-    int i, j;
-    printf("\n    ");
-    for (i = 0; i < border_length; ++i) {
-        print_chessman(0, i + 'A');
-    }
-    printf("\n   +");
-    for (i = 0; i < border_length; ++i) {
-        printf("---");
-    }
-    printf("+\n");
-
-    for (j = 0; j < border_length; ++j) {
-        printf("%2d |", j + 1);
-        for (i = 0; i < border_length; ++i) {
-            print_chessman(cb[i][j] + 2 * (local == (i << 8 | j)), '.');
-        }
-        printf("|\n");
-    }
-
-    printf("   +");
-    for (i = 0; i < border_length; ++i) {
-        printf("---");
-    }
-    printf("+\n");
-}
+#ifdef HAVE_RANDOM
+#define rand random
+#endif // HAVE_RANDOM
 
 void show_debug(Chessboard *p, uint16_t local) {
-    int x, y, i;
+    uint x, y, i;
     printf("\nlocals values(%%):");
     for (y = 0, i = 0; y < border_length; ++y) {
         printf("\n");
@@ -95,9 +47,9 @@ int algorithm(clock_t start, clock_t left) {
     if (!root.init_uct()) {
         return -1;
     }
-    show_chessboard(root.chessboard_, 0x8080);
+    root.show(root.chessboard_, 0x8080);
 
-    int max_id;
+    int max_id = 0;
     double max_value;
     // 1.由当前局面建立根节点，生成根节点的全部子节点，分别进行模拟对局；
     for (int i = 0; i < root.locals_area_; ++i) {
@@ -105,7 +57,7 @@ int algorithm(clock_t start, clock_t left) {
         root.generate_child(i);
         if (root.absolutely_win_) {
             max_id = i;
-            cerr << ":????" << endl;
+            std::cerr << ":????" << std::endl;
             goto back;
         }
     }
@@ -176,19 +128,18 @@ int algorithm(clock_t start, clock_t left) {
         }
     }
     // 8.从当前局面的子节点中挑选平均收益最高的给出最佳着法。
-    max_value = -1;
-    for (int i = 0; i < root.locals_area_; ++i) {
-        if (max_value < root.locals_[i]->value) {
-            max_value = root.locals_[i]->value;
+    for (int i = 0, max_count = 0; i < root.locals_area_; ++i) {
+        if (max_count < root.locals_[i]->count) {
+            max_count = root.locals_[i]->count;
             max_id = i;
         }
     }
 
 back:
-    int max_key = root.locals_[max_id]->key;
-    root.chessboard_[max_key >> 8][max_key & 0xff] = root.opponents_ + 1;
+    uint16_t max_key = root.locals_[max_id]->key;
+    root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
-    show_chessboard(root.chessboard_, max_key);
+    root.show(root.chessboard_, max_key);
 
     return root.locals_[max_id]->key;
 }
