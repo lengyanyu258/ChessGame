@@ -47,8 +47,9 @@ int algorithm(clock_t start, clock_t left) {
     if (!root.init_uct()) {
         return -1;
     }
-    //root.show(root.chessboard_, 0x8080);
-
+#ifdef DEBUG_EVAL
+    root.show(root.chessboard_, 0x8080);
+#endif
     if (root.locals_area_ == border_length * border_length) {
         int o = border_length / 2;
         return o << 8 | o;
@@ -142,12 +143,12 @@ int algorithm(clock_t start, clock_t left) {
     }
 
 back:
-    /*
+#ifdef DEBUG_EVAL
     uint16_t max_key = root.locals_[max_id]->key;
     root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
     root.show(root.chessboard_, max_key);
-    */
+#endif
 
     return root.locals_[max_id]->key;
 }

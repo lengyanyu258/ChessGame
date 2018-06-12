@@ -1,3 +1,6 @@
+# Unnecessary Directory
+bin/
+
 # IDE
 .idea/
 cmake-build-*/

@@ -5,3 +5,5 @@
 #cmakedefine ON_WIN32
 
 #cmakedefine HAVE_RANDOM
+
+#cmakedefine DEBUG_EVAL

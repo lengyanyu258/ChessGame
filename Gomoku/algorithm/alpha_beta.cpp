@@ -77,12 +77,13 @@ int alpha_beta(Chessboard *node, int alpha, int beta, int depth, bool opponent) 
 }
 
 int algorithm(clock_t start, clock_t left) {
-    Chessboard root;
+    Chessboard root, *p = &root, *child;
     if (!root.init_normal()) {
         return -1;
     }
-    //root.show(root.chessboard_, 0x8080);
-
+#ifdef DEBUG_EVAL
+    root.show(root.chessboard_, 0x8080);
+#endif
     int depth = 4;
     int rated_time = 60000;
     int score = 0;
@@ -96,25 +97,20 @@ int algorithm(clock_t start, clock_t left) {
 
     if (CLOCKS_PER_SEC != 1000) {
         left = left * CLOCKS_PER_SEC / 1000;
+        rated_time = static_cast<int>(rated_time * CLOCKS_PER_SEC / 1000);
     }
 
     // estimate the search depth
     // left_time = rated_time ^ (2 ^ (depth - rated_depth))
-    depth = log2f(pow(2, depth) * logf(left) / logf(rated_time));
-
-    Chessboard *p = &root, *child;
-    int x, y;
+    depth = static_cast<int>(log2f(static_cast<float>(pow(2, depth) * logf(left) / logf(rated_time))));
     for (int i = 0; i < p->locals_area_; ++i) {
-        x = p->scores_[i]->key >> 8;
-        y = p->scores_[i]->key & 0xff;
-
         if (p->scores_[i]->child == nullptr) {
             child = p->scores_[i]->child = new Chessboard;
             child->father_ = p;
             child->father_id_ = i;
             child->opponents_ = !p->opponents_;
 
-            // ¸´ÖÆÆåÅÌÓë¿ÉÂä×Óµã²¢¸üÐÂÓà¿Õ
+            // å¤åˆ¶æ£‹ç›˜ä¸Žå¯è½å­ç‚¹å¹¶æ›´æ–°ä½™ç©º
             child->scores_ = new OptNode*[p->locals_area_ - 1];
             memcpy(child->chessboard_, p->chessboard_, sizeof(p->chessboard_));
             for (int j = 0; j < p->locals_area_; ++j) {
@@ -127,7 +123,7 @@ int algorithm(clock_t start, clock_t left) {
                 }
             }
 
-            root.scores_[i]->score = alpha_beta(child, -999, 999, depth, child->opponents_);
+            root.scores_[i]->score = static_cast<int8_t>(alpha_beta(child, -999, 999, depth, child->opponents_));
 
             root.scores_[i]->child = nullptr;
             delete child;
@@ -143,11 +139,11 @@ int algorithm(clock_t start, clock_t left) {
     }
 
 back:
-    /*
+#ifdef DEBUG_EVAL
     root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
     root.show(root.chessboard_, max_key);
-    */
+#endif
 
     return max_key;
 }

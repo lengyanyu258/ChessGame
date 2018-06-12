@@ -26,16 +26,16 @@ int get_score(int level, bool live, int(*shape)[2]) {
 
 int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
     /*
-    ÎÒÃÇ¿ÉÒÔ½«Îå×ÓÆåµÄÁ¬Öé¿ÉÒÔ·ÖÎªÒÔÏÂ¼¸ÖÖ£º
+    æˆ‘ä»¬å¯ä»¥å°†äº”å­æ£‹çš„è¿žç å¯ä»¥åˆ†ä¸ºä»¥ä¸‹å‡ ç§ï¼š
 
-    ³É5£ºÎå×ÓÁ¬Öé
-    »î4£ºÁ½±ß¾ù²»±»À¹½ØµÄËÄ×ÓÁ¬Öé¡£
-    ËÀ4£ºÒ»±ß±»À¹½ØµÄËÄ×ÓÁ¬Öé
-    »î3£ºÁ½±ß¾ù²»±»À¹½ØµÄÈý×ÖÁ¬Öé
-    ËÀ3£ºÒ»±ß±»À¹½ØµÄÈý×ÖÁ¬Öé
-    »î2£ºÁ½±ß¾ù²»±»À¹½ØµÄ¶þ×ÓÁ¬Öé
-    ËÀ2£ºÒ»±ß±»À¹½ØµÄ¶þ×ÓÁ¬Öé
-    µ¥×Ó£ºËÄÖÜÎÞÏàÁ¬Æå×Ó
+    æˆ5ï¼šäº”å­è¿žç 
+    æ´»4ï¼šä¸¤è¾¹å‡ä¸è¢«æ‹¦æˆªçš„å››å­è¿žç ã€‚
+    æ­»4ï¼šä¸€è¾¹è¢«æ‹¦æˆªçš„å››å­è¿žç 
+    æ´»3ï¼šä¸¤è¾¹å‡ä¸è¢«æ‹¦æˆªçš„ä¸‰å­—è¿žç 
+    æ­»3ï¼šä¸€è¾¹è¢«æ‹¦æˆªçš„ä¸‰å­—è¿žç 
+    æ´»2ï¼šä¸¤è¾¹å‡ä¸è¢«æ‹¦æˆªçš„äºŒå­è¿žç 
+    æ­»2ï¼šä¸€è¾¹è¢«æ‹¦æˆªçš„äºŒå­è¿žç 
+    å•å­ï¼šå››å‘¨æ— ç›¸è¿žæ£‹å­
     */
     uint8_t color;
     bool live;
@@ -50,17 +50,17 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
         cb[x][y] = static_cast<uint8_t>(black + 1);
 
         /*
-        * ³É5£º100·Ö
-        * »î4£º90·Ö
-        * ËÀ4£º60·Ö
-        * »î3£º50·Ö
-        * ËÀ3£º30·Ö
-        * »î2£º20·Ö
-        * ËÀ2£º10·Ö
-        * µ¥×Ó£º0·Ö
+        * æˆ5ï¼š100åˆ†
+        * æ´»4ï¼š90åˆ†
+        * æ­»4ï¼š60åˆ†
+        * æ´»3ï¼š50åˆ†
+        * æ­»3ï¼š30åˆ†
+        * æ´»2ï¼š20åˆ†
+        * æ­»2ï¼š10åˆ†
+        * å•å­ï¼š0åˆ†
         */
         for (level = 5; level >= 2; --level) {
-            //ºáÏò¡ú
+            //æ¨ªå‘â†’
             i = x < level ? 0 : x - level + 1;
             for (k = i; k <= x && k < border_length - level + 1; ++k) {
                 if (cb[k][y] == 0) {
@@ -78,7 +78,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     }
                     live = false;
                     if (i - 1 >= 0 && cb[i - 1][y] == 0 && k + l < border_length - level + 1 && cb[k + l][y] == 0) {
-                        // »îlevel
+                        // æ´»level
                         live = true;
                     }
                     l = get_score(level, live, shape);
@@ -87,7 +87,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     }
                 }
             }
-            //×ÝÏò¡ý
+            //çºµå‘â†“
             j = y < level ? 0 : y - level + 1;
             for (k = j; k <= y && k < border_length - level + 1; ++k) {
                 if (cb[x][k] == 0) {
@@ -105,7 +105,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     }
                     live = false;
                     if (j - 1 >= 0 && cb[x][j - 1] == 0 && k + l < border_length - level + 1 && cb[x][k + l] == 0) {
-                        // »îlevel
+                        // æ´»level
                         live = true;
                     }
                     l = get_score(level, live, shape);
@@ -114,7 +114,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     }
                 }
             }
-            //×óÉÏµ½ÓÒÏÂ¨K
+            //å·¦ä¸Šåˆ°å³ä¸‹â†˜
             k = x - i < y - j ? x - i : y - j;
             lx = x - k;
             ly = y - k;
@@ -135,7 +135,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     live = false;
                     if (lx + k + l < border_length - level + 1 && ly + k + l < border_length - level + 1 &&
                         lx - 1 >= 0 && ly - 1 >= 0 && cb[lx - 1][ly - 1] == 0 && cb[lx + k + l][ly + k + l] == 0) {
-                        // »îlevel
+                        // æ´»level
                         live = true;
                     }
                     l = get_score(level, live, shape);
@@ -144,7 +144,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     }
                 }
             }
-            //ÓÒÉÏµ½×óÏÂ¨L
+            //å³ä¸Šåˆ°å·¦ä¸‹â†™
             i = border_length - x <= level ? border_length - 1 : x + level - 1;
             k = i - x < y - j ? i - x : y - j;
             rx = x + k;
@@ -167,7 +167,7 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
                     if (rx - k + 1 < border_length - level + 1 && ry + k + l < border_length - level + 1 &&
                         rx - k - l >= level - 1 && ry + k - 1 >= 0 &&
                         cb[rx - k + 1][ry + k - 1] == 0 && cb[rx - k - l][ry + k + l] == 0) {
-                        // »îlevel
+                        // æ´»level
                         live = true;
                     }
                     l = get_score(level, live, shape);
@@ -178,10 +178,10 @@ int optimal(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
             }
         }
         /*
-        * Ë«ËÀ4¡¢ËÀ4»î3£º90·Ö
-        * Ë«»î3£º80·Ö
-        * ËÀ3»î3£º70·Ö
-        * Ë«»î2£º40·Ö
+        * åŒæ­»4ã€æ­»4æ´»3ï¼š90åˆ†
+        * åŒæ´»3ï¼š80åˆ†
+        * æ­»3æ´»3ï¼š70åˆ†
+        * åŒæ´»2ï¼š40åˆ†
         */
         if (shape[4][0] >= 2 || (shape[4][0] > 0 && shape[3][1] > 0)) {
             l = 90;

@@ -25,6 +25,10 @@ elseif(UNIX)
 	link_libraries(pthread)
 endif()
 
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(DEBUG_EVAL 1)
+endif()
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file(
@@ -51,11 +55,15 @@ add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
 		protocol/pisqpipe.cpp algorithm/ai.h algorithm/uct.cpp
         brain.cpp Chessboard.cpp)
 
+message(STATUS ${CMAKE_SOURCE_DIR}/bin)
+
+# set installation
 install(TARGETS
 		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
 		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-alpha_beta
 		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
-		DESTINATION ${PROJECT_SOURCE_DIR})
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin
+		CONFIGURATIONS Release)
 
 # add the example project.
 add_subdirectory(protocol EXCLUDE_FROM_ALL)

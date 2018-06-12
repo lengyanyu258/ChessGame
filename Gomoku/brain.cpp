@@ -90,6 +90,7 @@ void brain_end() {
 }
 
 #ifdef DEBUG_EVAL
+#ifndef ON_UNIX
 #include <windows.h>
 
 void brain_eval(int x, int y) {
@@ -104,7 +105,11 @@ void brain_eval(int x, int y) {
     TextOut(dc, rc.right - 15, 3, &c, 1);
     ReleaseDC(wnd, dc);
 }
+#else
+void brain_eval(int x, int y) {
 
+}
+#endif
 #endif
 /*
 

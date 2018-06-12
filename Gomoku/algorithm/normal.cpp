@@ -29,8 +29,9 @@ int algorithm(clock_t start, clock_t left) {
     if (!root.init_normal()) {
         return -1;
     }
-    //root.show(root.chessboard_, 0x8080);
-
+#ifdef DEBUG_EVAL
+    root.show(root.chessboard_, 0x8080);
+#endif
     if (CLOCKS_PER_SEC != 1000) {
         left = left * CLOCKS_PER_SEC / 1000;
     }
@@ -51,7 +52,7 @@ int algorithm(clock_t start, clock_t left) {
             max_key = root.scores_[i]->key;
             goto back;
         } else if (root.scores_[i]->score > score) {
-            score = root.scores_[i]->score;
+            score = static_cast<uint8_t>(root.scores_[i]->score);
             max_key = root.scores_[i]->key;
         }
         if (clock() - start >= left) {
@@ -60,11 +61,11 @@ int algorithm(clock_t start, clock_t left) {
     }
 
 back:
-    /*
+#ifdef DEBUG_EVAL
     root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
     root.show(root.chessboard_, max_key);
-    */
+#endif
 
     return max_key;
 }
