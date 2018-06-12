@@ -265,7 +265,7 @@ inline void print_chessman(uint8_t c, const char b) {
 }
 
 void Chessboard::show(uint8_t(*cb)[MAX_BOARD], uint16_t local) {
-    uint i, j;
+    int i, j;
     printf("\n    ");
     for (i = 0; i < border_length; ++i) {
         print_chessman(0, char(i + 'A'));

@@ -38,13 +38,24 @@ include_directories(${PROJECT_BINARY_DIR})
 
 # add optimal algorithm program
 add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
-        protocol/pisqpipe.cpp algorithm/ai.h algorithm/normal.cpp
+        protocol/pisqpipe.cpp algorithm/ai.h algorithm/ai.cpp algorithm/normal.cpp
+        brain.cpp Chessboard.cpp)
+
+# add alpha-beta search algorithm program
+add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-alpha_beta
+        protocol/pisqpipe.cpp algorithm/ai.h algorithm/ai.cpp algorithm/alpha_beta.cpp
         brain.cpp Chessboard.cpp)
 
 # add uct algorithm program
 add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
 		protocol/pisqpipe.cpp algorithm/ai.h algorithm/uct.cpp
         brain.cpp Chessboard.cpp)
+
+install(TARGETS
+		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
+		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-alpha_beta
+		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
+		DESTINATION ${PROJECT_SOURCE_DIR})
 
 # add the example project.
 add_subdirectory(protocol EXCLUDE_FROM_ALL)

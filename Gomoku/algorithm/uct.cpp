@@ -7,7 +7,7 @@
 #endif // HAVE_RANDOM
 
 void show_debug(Chessboard *p, uint16_t local) {
-    uint x, y, i;
+    unsigned int x, y, i;
     printf("\nlocals values(%%):");
     for (y = 0, i = 0; y < border_length; ++y) {
         printf("\n");
@@ -47,7 +47,12 @@ int algorithm(clock_t start, clock_t left) {
     if (!root.init_uct()) {
         return -1;
     }
-    root.show(root.chessboard_, 0x8080);
+    //root.show(root.chessboard_, 0x8080);
+
+    if (root.locals_area_ == border_length * border_length) {
+        int o = border_length / 2;
+        return o << 8 | o;
+    }
 
     int max_id = 0;
     double max_value;
@@ -65,6 +70,7 @@ int algorithm(clock_t start, clock_t left) {
     if (CLOCKS_PER_SEC != 1000) {
         left = left * CLOCKS_PER_SEC / 1000;
     }
+
     // 2.从根节点开始，进行最佳优先搜索；
     while (clock() - start < left) {
         // UCB – The Upper Confidence Bound Algorithm，上置信算法
@@ -136,10 +142,12 @@ int algorithm(clock_t start, clock_t left) {
     }
 
 back:
+    /*
     uint16_t max_key = root.locals_[max_id]->key;
     root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
     root.show(root.chessboard_, max_key);
+    */
 
     return root.locals_[max_id]->key;
 }

@@ -17,7 +17,7 @@ struct Chessboard;
 
 struct OptNode {
     uint16_t key = 0xffff;
-    uint8_t score = 0;
+    int8_t score = 0;
     Chessboard *child = nullptr;
 };
 
