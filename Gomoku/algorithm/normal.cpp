@@ -4,6 +4,7 @@
 
 #include "ai.h"
 #include <cstdio>
+#include <vector>
 
 void show_debug(Chessboard *p, uint16_t local) {
     int x, y, i;
@@ -37,6 +38,7 @@ int algorithm(clock_t start, clock_t left) {
     }
 
     uint8_t score = 0;
+    std::vector<OptNode*> same_score;
     uint16_t max_key = 0;
 
     if (root.locals_area_ == border_length * border_length) {
@@ -53,12 +55,16 @@ int algorithm(clock_t start, clock_t left) {
             goto back;
         } else if (root.scores_[i]->score > score) {
             score = static_cast<uint8_t>(root.scores_[i]->score);
-            max_key = root.scores_[i]->key;
+            same_score.clear();
+            same_score.push_back(root.scores_[i]);
+        } else if (root.scores_[i]->score == score) {
+            same_score.push_back(root.scores_[i]);
         }
         if (clock() - start >= left) {
             goto back;
         }
     }
+    max_key = same_score[rand() % same_score.size()]->key;
 
 back:
 #ifdef DEBUG_EVAL

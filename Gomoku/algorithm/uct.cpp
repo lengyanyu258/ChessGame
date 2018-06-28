@@ -50,10 +50,10 @@ int algorithm(clock_t start, clock_t left) {
 #ifdef DEBUG_EVAL
     root.show(root.chessboard_, 0x8080);
 #endif
-    if (root.locals_area_ == border_length * border_length) {
-        int o = border_length / 2;
-        return o << 8 | o;
-    }
+    //if (root.locals_area_ == border_length * border_length) {
+    //    int o = border_length / 2;
+    //    return o << 8 | o;
+    //}
 
     int max_id = 0;
     double max_value;
@@ -63,7 +63,6 @@ int algorithm(clock_t start, clock_t left) {
         root.generate_child(i);
         if (root.absolutely_win_) {
             max_id = i;
-            std::cerr << ":????" << std::endl;
             goto back;
         }
     }
@@ -71,6 +70,11 @@ int algorithm(clock_t start, clock_t left) {
     if (CLOCKS_PER_SEC != 1000) {
         left = left * CLOCKS_PER_SEC / 1000;
     }
+
+    int center_pos = border_length / 2;
+    int center_len = 1;
+    int total_pos = border_length * border_length;
+    int x, y;
 
     // 2.从根节点开始，进行最佳优先搜索；
     while (clock() - start < left) {
@@ -80,9 +84,20 @@ int algorithm(clock_t start, clock_t left) {
         max_value = -1;
         // 3.利用 UCB 公式计算每个子节点的 UCB 值，选择最大值的子节点；
         for (int i = 0; i < p->locals_area_; ++i) {
+            x = p->locals_[i]->key >> 8;
+            y = p->locals_[i]->key & 0xff;
+            center_len = sqrt(pow(abs(x - center_pos), 2) + pow(abs(y - center_pos), 2)) - 1;
+            if (center_len > (total_pos - p->locals_area_) / 2) {
+                continue;
+            }
+            //printf("x:%d, y:%d center_len:%d number:%d\n", x, y, center_len, (total_pos - p->locals_area_) / 2);
+
             if (p->locals_[i]->count == 0) {
                 max_id = i;
                 break;
+            } else if (p->total_count_ > 10000 && double(p->locals_[i]->count) / double(p->total_count_) > 0.3) {
+                max_id = i;
+                goto back;
             }
             // UCB = X + sqrt(1.96ln(N) / T)，X 表示以前的收益，N 表示所有机器玩过的总次数，T 表示这台机器玩过的次数。
             bonus = sqrt(1.96 * log(p->total_count_) / p->locals_[i]->count);

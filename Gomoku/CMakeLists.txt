@@ -41,27 +41,25 @@ configure_file(
 include_directories(${PROJECT_BINARY_DIR})
 
 # add optimal algorithm program
-add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
+add_executable(${PFX_NAME}normal${EXE_ARCH}
         protocol/pisqpipe.cpp algorithm/ai.h algorithm/ai.cpp algorithm/normal.cpp
         brain.cpp Chessboard.cpp)
 
 # add alpha-beta search algorithm program
-add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-alpha_beta
+add_executable(${PFX_NAME}alpha_beta${EXE_ARCH}
         protocol/pisqpipe.cpp algorithm/ai.h algorithm/ai.cpp algorithm/alpha_beta.cpp
         brain.cpp Chessboard.cpp)
 
 # add uct algorithm program
-add_executable(${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
+add_executable(${PFX_NAME}uct${EXE_ARCH}
 		protocol/pisqpipe.cpp algorithm/ai.h algorithm/uct.cpp
         brain.cpp Chessboard.cpp)
 
-message(STATUS ${CMAKE_SOURCE_DIR}/bin)
-
 # set installation
 install(TARGETS
-		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-normal
-		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-alpha_beta
-		${PFX_NAME}${EXE_NAME}${EXE_ARCH}-uct
+		${PFX_NAME}normal${EXE_ARCH}
+		${PFX_NAME}alpha_beta${EXE_ARCH}
+		${PFX_NAME}uct${EXE_ARCH}
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin
 		CONFIGURATIONS Release)
 

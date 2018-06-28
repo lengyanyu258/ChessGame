@@ -1,6 +1,7 @@
 #include "ai.h"
 #include <cmath>
 #include <cstdio>
+#include <vector>
 #include <cstring>
 
 void show_debug(Chessboard *p, uint16_t local) {
@@ -85,8 +86,9 @@ int algorithm(clock_t start, clock_t left) {
     root.show(root.chessboard_, 0x8080);
 #endif
     int depth = 4;
-    int rated_time = 60000;
+    clock_t rated_time = 60000;
     int score = 0;
+    std::vector<OptNode*> same_score;
     uint16_t max_key = 0;
 
     if (root.locals_area_ == border_length * border_length) {
@@ -97,7 +99,7 @@ int algorithm(clock_t start, clock_t left) {
 
     if (CLOCKS_PER_SEC != 1000) {
         left = left * CLOCKS_PER_SEC / 1000;
-        rated_time = static_cast<int>(rated_time * CLOCKS_PER_SEC / 1000);
+        rated_time = rated_time * CLOCKS_PER_SEC / 1000;
     }
 
     // estimate the search depth
@@ -133,16 +135,21 @@ int algorithm(clock_t start, clock_t left) {
                 goto back;
             } else if (root.scores_[i]->score > score) {
                 score = root.scores_[i]->score;
-                max_key = root.scores_[i]->key;
+                same_score.clear();
+                same_score.push_back(root.scores_[i]);
+            } else if (root.scores_[i]->score == score) {
+                same_score.push_back(root.scores_[i]);
             }
         }
     }
+    max_key = same_score[rand() % same_score.size()]->key;
 
 back:
 #ifdef DEBUG_EVAL
     root.chessboard_[max_key >> 8][max_key & 0xff] = static_cast<uint8_t>(root.opponents_ + 1);
     show_debug(&root, max_key);
     root.show(root.chessboard_, max_key);
+    printf("depath: %d, elapsed time: %d\n", depth, clock() - start);
 #endif
 
     return max_key;
